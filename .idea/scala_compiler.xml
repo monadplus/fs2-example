@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
+    <option name="higherKinds" value="true" />
     <profile name="sbt 1" modules="fs2-example" />
     <profile name="sbt 2" modules="">
       <option name="implicitConversions" value="true" />
@@ -35,7 +36,6 @@
         <parameter value="-Xlint:unsound-match" />
         <parameter value="-Yno-adapted-args" />
         <parameter value="-Ypartial-unification" />
-        <parameter value="-Ywarn-dead-code" />
         <parameter value="-Ywarn-extra-implicit" />
         <parameter value="-Ywarn-inaccessible" />
         <parameter value="-Ywarn-infer-any" />
@@ -51,7 +51,7 @@
         <parameter value="-Ywarn-value-discard" />
       </parameters>
       <plugins>
-        <plugin path="$USER_HOME$/.ivy2/cache/org.spire-math/kind-projector_2.12/jars/kind-projector_2.12-0.9.8.jar" />
+        <plugin path="$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/spire-math/kind-projector_2.12/0.9.8/kind-projector_2.12-0.9.8.jar" />
       </plugins>
     </profile>
   </component>

@@ -5,9 +5,9 @@ scalaVersion in ThisBuild := "2.12.7"
 scalafmtOnCompile in ThisBuild := true
 
 // Library versions all in one place, for convenience and sanity.
-lazy val catsVersion          = "1.4.0"
-lazy val catsEffectsVersion   = "1.0.0"
-lazy val fs2Version           = "1.0.0"
+lazy val catsVersion          = "1.6.0"
+lazy val catsEffectsVersion   = "1.2.0"
+lazy val fs2Version           = "1.0.3"
 lazy val mouseVersion         = "0.18"
 lazy val kittensVersion       = "1.1.1"
 lazy val kindProjectorVersion = "0.9.8"
@@ -22,8 +22,9 @@ lazy val commonDependencies = Seq(
   "org.typelevel"  %% "mouse"       % mouseVersion, // convenient syntax
   "org.typelevel"  %% "kittens"     % kittensVersion, // automatic type class instances derivation
   "org.typelevel"  %% "cats-effect" % catsEffectsVersion,
-  "co.fs2"         %% "fs2-core"    % "1.0.0", // cats 1.4.0 and cats-effect 1.0
-  "co.fs2"         %% "fs2-io"      % "1.0.0", // optional I/O library
+  "co.fs2"         %% "fs2-core"    % fs2Version, // cats 1.4.0 and cats-effect 1.0
+  "co.fs2"         %% "fs2-io"      % fs2Version, // optional I/O library
+  "co.fs2"         %% "fs2-reactive-streams"      % fs2Version, // optional I/O library
   "org.scalacheck" %% "scalacheck"  % scalaCheckVersion % Test,
   "org.scalatest"  %% "scalatest"   % scalaTestVersion % Test,
   "org.scalactic"  %% "scalactic"   % scalaTestVersion % Test
