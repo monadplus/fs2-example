@@ -1,3 +1,5 @@
+package io.monadplus
+
 import java.nio.file.{Files, Path, Paths}
 
 import cats.effect.IO
@@ -9,7 +11,7 @@ class ConverterSpec extends FunSpec {
     val basePath = "src/test/resources"
 
     def celsiusToFahrenheit(in: Path, out: Path): IO[Unit] =
-      Converter.converter(in, out).compile.drain
+      Converter.convert(in, out).compile.drain
 
     it("should convert from Fahrenheit to Celsius") {
       val in  = Paths.get(basePath, "fahrenheit.txt")

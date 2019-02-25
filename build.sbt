@@ -1,5 +1,9 @@
 resolvers in Global += Resolver.sonatypeRepo("releases") // "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
+//ensimeScalaVersion in ThisBuild := "2.12.7"
+scalaVersion in ThisBuild := "2.12.7"
+scalafmtOnCompile in ThisBuild := true
+
 // Library versions all in one place, for convenience and sanity.
 lazy val catsVersion          = "1.4.0"
 lazy val catsEffectsVersion   = "1.0.0"
@@ -59,7 +63,7 @@ lazy val compilerFlags = Seq(
     "-Yno-adapted-args",    // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
     // "-Yno-imports",                      // No predef or default imports
     "-Ypartial-unification", // Enable partial unification in type constructor inference
-    "-Ywarn-dead-code", // Warn when dead code is identified.
+//    "-Ywarn-dead-code", // Warn when dead code is identified.
     "-Ywarn-extra-implicit", // Warn when more than one implicit parameter section is defined.
     "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
     "-Ywarn-infer-any", // Warn when a type argument is inferred to be `Any`.
@@ -89,8 +93,7 @@ lazy val compilerFlags = Seq(
 )
 
 lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
-  organization := "org.statictypeddog",
-  scalaVersion := "2.12.7",
+  organization := "io.monadplus",
   licenses ++= Seq(("MIT", url("http://opensource.org/licenses/MIT"))),
   parallelExecution in Test := true,
   fork in Test := true,

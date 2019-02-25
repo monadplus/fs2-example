@@ -1,7 +1,8 @@
-import cats.effect._, cats.effect.implicits._
-import cats.implicits._
+package io.monadplus
+import cats.effect.{ExitCode, IO, IOApp}
 import fs2.Stream
 import scala.concurrent.duration._
+import cats.implicits._
 
 object AwakeEvery extends IOApp {
 
