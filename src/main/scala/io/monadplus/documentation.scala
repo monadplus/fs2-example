@@ -4,13 +4,14 @@ import java.util.concurrent.Executors
 
 import cats.implicits._
 import cats.effect._
+import fs2.Stream.ToPull
 import fs2._
 import fs2.concurrent.Queue
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-object Documentation extends App {
+object documentation extends App {
 
   // Useful: import fs2.io._
 
@@ -21,7 +22,7 @@ object Documentation extends App {
   (Stream(1, 2, 3) ++ Stream(4, 5)).toList // ++ takes constant time
   Stream(1, 2, 3).map(_ + 1).toList
   Stream(1, 2, 3).filter(_ % 2 != 0).toList
-  Stream(1, 2, 3).fold(0)(_ + _).toList // List(6)
+  Stream(1, 2, 3).fold(0)(_ + _).toList
   Stream(none, 2.some, 3.some).collect { case Some(i) => i }.toList
   Stream.range(0, 5).intersperse(42).toList
   Stream(1, 2, 3).flatMap(i => Stream(i, i)).toList // List(1,1,2,2,3,3)
@@ -64,13 +65,14 @@ object Documentation extends App {
     s ++ repeat(s) // trick: ++ is called by name
 
   def drain[F[_], O](s: Stream[F, O]): Stream[F, INothing] =
-    s.mapChunks(_ => Chunk.empty[INothing])
+    s.mapChunks(_ => Chunk.empty)
 
   def attempt[F[_]: RaiseThrowable, O](s: Stream[F, O]): Stream[F, Either[Throwable, O]] =
     s.map(Right(_)).handleErrorWith(t => Stream.emit(Left(t)))
 
-  // *** scanChunksOpt vs Pull ***
+  // *** Pull[F[_], O, R] ***
 
+  // Using chunksOpt
   def tk[F[_], O](n: Long): Pipe[F, O, O] =
     is =>
       is.scanChunksOpt(n) { n =>
@@ -85,8 +87,6 @@ object Documentation extends App {
         }
     }
 
-  Stream(1, 2, 3, 4).through(tk(2)).toList
-
   def tk2[F[_], O](n: Long): Pipe[F, O, O] = {
     def go(s: Stream[F, O], n: Long): Pull[F, O, Unit] =
       s.pull.uncons.flatMap {
@@ -100,6 +100,9 @@ object Documentation extends App {
     in =>
       go(in, n).stream
   }
+
+  Stream(1, 2, 3, 4).through(tk(2)).toList
+  Stream(1, 2, 3, 4).through(tk2(2)).toList
 
   // *** Exercises ***
 
@@ -144,6 +147,19 @@ object Documentation extends App {
       go(in).stream
   }
 
+  def fold[F[_], O, O2](z: O2)(f: (O2, O) => O2): Pipe[F, O, O2] = {
+    def fold_(s: Stream[F, O])(z: O2): Pull[F, INothing, O2] =
+      s.pull.uncons.flatMap {
+        case None => Pull.pure(z)
+        case Some((hd, tl)) =>
+          val acc = hd.foldLeft(z)(f)
+          fold_(tl)(acc)
+      }
+
+    is =>
+      fold_(is)(z).flatMap(Pull.output1).stream
+  }
+
   def scan[F[_], O, O2](z: O2)(f: (O2, O) => O2): Pipe[F, O, O2] = {
     def scan_(s: Stream[F, O])(o2: O2): Pull[F, O2, Unit] =
       s.pull.uncons1.flatMap {
@@ -157,8 +173,26 @@ object Documentation extends App {
       (Pull.output1(z) >> scan_(is)(z)).stream
   }
 
+//  Is it possible to implement this ?
+
+//  def scan2[F[_], O, O2](z: O2)(f: (O2, O) => O2): Pipe[F, O, O2] = {
+//    def scan_(s: Stream[F, O])(o2: O2): Stream[F, O2] =
+//      s.repeatPull {
+//        _.uncons1.flatMap {
+//          case None => Pull.pure(None)
+//          case Some((hd, tl)) =>
+//            val next = f(o2, hd)
+//            Pull.output1(next).as(Some(tl))
+//        }
+//      }
+//    is =>
+//      Pull.output1(z).stream ++ scan_(is)(z)
+//  }
+
   // *** Concurrency ***
+
   // merge, concurrently, interrupt, either, mergeHaltBoth, parJoin
+
   Stream(1, 2, 3)
     .merge(Stream.eval(IO.sleep(100.millis) >> IO.pure(4)))
     .compile
@@ -207,6 +241,10 @@ object Documentation extends App {
 
   def mergeHaltR[F[_]: Concurrent, O]: Pipe2[F, O, O, O] =
     (s1, s2) => mergeHaltL[F, O].apply(s2, s1)
+
+  // -----------------------------------
+  // -----------------------------------
+  // -----------------------------------
 
   // **** Asynchronous effects (cb once) ****
   trait Connection {
@@ -261,4 +299,53 @@ object Documentation extends App {
   // org.reactivestreams.Publisher (must have a single subscriber only)
   val publisher: StreamUnicastPublisher[IO, Int] = Stream(1, 2, 3).covary[IO].toUnicastPublisher()
   publisher.toStream[IO]
+
+  /*   In FS2, a stream can terminate in one of three ways:
+
+    - Normal input exhaustion. For instance, the stream Stream(1,2,3) terminates after the single chunk (containing the values 1, 2, 3) is emitted.
+
+    - An uncaught exception. For instance, the stream Stream(1,2,3) ++ (throw Err) terminates with Err after the single chunk is emitted.
+
+    - Interruption by the stream consumer. Interruption can be synchronous, as in (Stream(1) ++ (throw Err)) take 1, which will deterministically
+     halt the stream before the ++, or it can be asynchronous, as in s1 merge s2 take 3.
+     A stream will never be interrupted while it is acquiring a resource (via bracket) or while it is releasing a resource. The bracket function
+     guarantees that if FS2 starts acquiring the resource, the corresponding release action will be run.
+      Other than that, Streams can be interrupted in between any two ‘steps’ of the stream. The steps themselves are atomic from the perspective of
+     FS2. Stream.eval(eff) is a single step, Stream.emit(1) is a single step, Stream(1,2,3) is a single step (emitting a chunk), and
+     all other operations (like handleErrorWith, ++, and flatMap) are multiple steps and can be interrupted.
+     But importantly, user-provided effects that are passed to eval are never interrupted once they are started (and FS2 does not have enough knowledge of user-provided effects to know how to interrupt them anyway).
+   */
+
+  // The take 1 uses Pull but doesn’t examine the entire stream
+  case object Err extends Throwable
+  (Stream(1) ++ (throw Err)).take(1).toList // List(1)
+  (Stream(1) ++ Stream.raiseError[IO](Err)).take(1).compile.toList.unsafeRunSync() // List(1)
+
+  // bracket or onFinalize to clean up resources
+  Stream(1)
+    .covary[IO]
+    .onFinalize(IO { println("finalized!") })
+    .take(1)
+    .compile
+    .toVector
+    .unsafeRunSync()
+
+  // Non-deterministic
+  val s1 = (Stream(1) ++ Stream(2)).covary[IO]
+  val s2 = (Stream.empty ++ Stream.raiseError[IO](Err)).handleErrorWith { e =>
+    println(e); Stream.raiseError[IO](e)
+  }
+
+  // Merge is non-deterministic !
+
+  /*
+    Option 1) s1 may complete before the error in s2 is encountered, in which case nothing will be printed and no error will occur.
+    Option 2) s2 may encounter the error before any of s1 is emitted. When the error is reraised by s2, that will terminate the merge
+              and asynchronously interrupt s1, and the take terminates with that same error.
+    Option 3) s2 may encounter the error before any of s1 is emitted, but during the period where the value
+              is caught by handleErrorWith, s1 may emit a value and the take(1) may terminate, triggering interruption of both s1 and s2, before the
+              error is reraised but after the exception is printed! In this case, the stream will still terminate without error.
+   */
+
+  s1.merge(s2).take(1)
 }
