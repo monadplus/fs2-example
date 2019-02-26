@@ -4,7 +4,6 @@ import java.util.concurrent.Executors
 
 import cats.implicits._
 import cats.effect._
-import fs2.Stream.ToPull
 import fs2._
 import fs2.concurrent.Queue
 
@@ -274,8 +273,7 @@ object documentation extends App {
     def withRows(cb: Either[Throwable, Row] => Unit): Unit
   }
 
-  def rows[F[_]](h: CSVHandle)(implicit F: ConcurrentEffect[F],
-                               cs: ContextShift[F]): Stream[F, Row] =
+  def rows[F[_]](h: CSVHandle)(implicit F: ConcurrentEffect[F]): Stream[F, Row] =
     for {
       q <- Stream.eval(Queue.unbounded[F, Either[Throwable, Row]])
       _ <- Stream.eval {

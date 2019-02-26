@@ -1,9 +1,9 @@
 package io.monadplus.concurrency
 
+import cats.effect.{Concurrent, ExitCode, IO, IOApp}
 import cats.implicits._
-import cats.effect.{Concurrent, ExitCode, IO, IOApp, Timer}
-import fs2.concurrent.Queue
 import fs2.Stream
+import fs2.concurrent.Queue
 
 import scala.concurrent.duration._
 
@@ -11,22 +11,21 @@ class Buffering[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Concurre
 
   def start: Stream[F, Unit] =
     Stream(
-      Stream.range(0, 1000).covary[F].to(q1.enqueue),
-      q1.dequeue.to(q2.enqueue),
-      //.map won't work here as you're trying to map a pure value with a side effect. Use `evalMap` instead.
+      Stream.range(0, 100000).covary[F].through(q1.enqueue),
+      q1.dequeue.through(q2.enqueue),
       q2.dequeue.evalMap(n => F.delay(println(s"Pulling out $n from Queue #2")))
     ).parJoin(3)
 }
 
-class Fifo extends IOApp {
+object Fifo extends IOApp {
 
-  override def run(args: List[String]): IO[ExitCode] = {
-    val stream = for {
-      q1 <- Stream.eval(Queue.bounded[IO, Int](1))
-      q2 <- Stream.eval(Queue.bounded[IO, Int](100))
-      bp = new Buffering[IO](q1, q2)
-      _  <- Stream.sleep_[IO](5.seconds).concurrently(bp.start.drain)
-    } yield ()
-    stream.compile.drain.as(ExitCode.Success)
-  }
+  val program = for {
+    q1 <- Stream.eval(Queue.bounded[IO, Int](1))
+    q2 <- Stream.eval(Queue.bounded[IO, Int](100))
+    bp = new Buffering[IO](q1, q2)
+    _  <- Stream.sleep_[IO](2.seconds).concurrently(bp.start.drain)
+  } yield ()
+
+  override def run(args: List[String]): IO[ExitCode] =
+    program.compile.drain.as(ExitCode.Success)
 }
