@@ -41,11 +41,11 @@ object Utf8 extends IOApp {
       else -1 // continuation byte or garbage
 
     def lastIncompleteBytes(bs: Array[Byte]): Int =
-      bs.reverse
-        .take(3) // we only have to consider the last 3 bytes where multi-byte could be split
+      bs.drop(Math.max(0, bs.length - 3)) // Faster than bs.reverse.take(3)
+        .reverseIterator
         .map(continuationBytes)
         .zipWithIndex
-        .find { case (c, _) => c >= 0 } // Do we care about ascii ?
+        .find { case (c, _) => c >= 0 } // TODO: > or >=
         .map {
           case (c, i) => if (c == i) 0 /*the multi-byte fits in the remaining space*/ else i + 1 /*0 based index so + 1*/
         }
