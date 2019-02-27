@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 
 /*
  How to interpret a utf8 unicode character.
- - Utf8 can be represented as 1,2,3,4 bytes.
+ - Intersperse can be represented as 1,2,3,4 bytes.
  - This is called multi-byte sequences.
  - The length is encoded in the higher bits of each octal
 

@@ -121,31 +121,6 @@ object documentation extends App {
       go(in).stream
   }
 
-  def intersperse[F[_], O](separator: O): Pipe[F, O, O] = {
-    def go(s: Stream[F, O]): Pull[F, O, Unit] =
-      s.pull.echo1.flatMap {
-        case None => Pull.done
-        case Some(s) =>
-          s.repeatPull {
-              _.uncons.flatMap {
-                case None => Pull.pure(None)
-                case Some((hd, tl)) =>
-                  val bldr = Vector.newBuilder[O]
-                  bldr.sizeHint(hd.size * 2)
-                  hd.foreach { o =>
-                    bldr += separator
-                    bldr += o
-                  }
-                  Pull.output(Chunk.vector(bldr.result)) >> Pull.pure(Some(tl))
-              }
-            }
-            .pull
-            .echo
-      }
-    in =>
-      go(in).stream
-  }
-
   def fold[F[_], O, O2](z: O2)(f: (O2, O) => O2): Pipe[F, O, O2] = {
     def fold_(s: Stream[F, O])(z: O2): Pull[F, INothing, O2] =
       s.pull.uncons.flatMap {
