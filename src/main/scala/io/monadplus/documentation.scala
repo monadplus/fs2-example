@@ -10,6 +10,21 @@ import fs2.concurrent.Queue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+/*
+### Streams can terminate:
+  - When they are finite and they hit their last element
+  - with an error
+  - when built with an interrupting combinator like interruptWhen or mergeHalt or concurrently
+  - Whenever you want, using a Pull with Pull.done
+  - never
+
+### fs2 vs akka-streams:
+ - akka-streams uses Future, which is worse than IO in about every way we care about
+ - akka-streams are way more complicated than fs2, so it's harder to learn
+ - We want to use fs2 for itself and its integrations, and we don't want engineers here to learn two streaming systems
+ - Any integrations that are akka-streams only and don't exist for fs2 we can just hijack using streamz-converter and make into fs2 streams
+
+ */
 object documentation extends App {
 
   // Useful: import fs2.io._
