@@ -231,6 +231,18 @@ object documentation extends App {
   def mergeHaltR[F[_]: Concurrent, O]: Pipe2[F, O, O, O] =
     (s1, s2) => mergeHaltL[F, O].apply(s2, s1)
 
+  // <-o->
+  Stream(1, 2, 3, 4, 5)
+    .broadcast[IO]
+    .map { worker =>
+      worker.evalMap(i => IO(println(s"Processing: $i")))
+    }
+    .take(3)
+    .parJoinUnbounded[IO, Unit]
+    .compile
+    .drain
+    .unsafeRunSync
+
   // -----------------------------------
   // -----------------------------------
   // -----------------------------------

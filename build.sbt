@@ -91,7 +91,7 @@ lazy val compilerFlags = Seq(
     "-Ywarn-unused:locals",
     "-Ywarn-unused:imports",
     "-Yno-imports"
-  ),
+  )
 )
 
 lazy val commonSettings: Seq[Def.Setting[_]] = Seq(
