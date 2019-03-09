@@ -40,11 +40,11 @@ object documentation extends App {
   Stream(none, 2.some, 3.some).collect { case Some(i) => i }.toList
   Stream.range(0, 5).intersperse(42).toList
   Stream(1, 2, 3).flatMap(i => Stream(i, i)).toList // List(1,1,2,2,3,3)
-  Stream(1, 2, 3).repeat.take(9).toList             // List(1,2,3,1,2,3,1,2,3)
+  Stream(1, 2, 3).repeat.take(9).toList // List(1,2,3,1,2,3,1,2,3)
 
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
-  implicit val timer: Timer[IO]     = IO.timer(ec)
+  implicit val timer: Timer[IO] = IO.timer(ec)
   implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
   val s1err = Stream.raiseError[IO](new Exception("BOOM !"))
@@ -65,7 +65,7 @@ object documentation extends App {
     ds.toDoubles
   }
 
-  val acquire: IO[Int]  = ???
+  val acquire: IO[Int] = ???
   val release: IO[Unit] = ???
   Stream
     .bracket(acquire)(_ => release)
@@ -279,8 +279,8 @@ object documentation extends App {
     for {
       q <- Stream.eval(Queue.unbounded[F, Either[Throwable, Row]])
       _ <- Stream.eval {
-            F.delay(h.withRows(e => F.runAsync(q.enqueue1(e))(_ => IO.unit).unsafeRunSync))
-          }
+        F.delay(h.withRows(e => F.runAsync(q.enqueue1(e))(_ => IO.unit).unsafeRunSync))
+      }
       row <- q.dequeue.rethrow
     } yield row
 

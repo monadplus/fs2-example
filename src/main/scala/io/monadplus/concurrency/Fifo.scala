@@ -23,7 +23,7 @@ object Fifo extends IOApp {
     q1 <- Stream.eval(Queue.bounded[IO, Int](1))
     q2 <- Stream.eval(Queue.bounded[IO, Int](100))
     bp = new Buffering[IO](q1, q2)
-    _  <- Stream.sleep_[IO](2.seconds).concurrently(bp.start.drain)
+    _ <- Stream.sleep_[IO](2.seconds).concurrently(bp.start.drain)
   } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =

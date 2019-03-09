@@ -54,8 +54,8 @@ object Utf8 extends IOApp {
     def processSingleChunk(outputAndBuffer: (List[String], Chunk[Byte]),
                            nextBytes: Chunk[Byte]): (List[String], Chunk[Byte]) = {
       val (output, buffer) = outputAndBuffer
-      val allBytes         = Array.concat(buffer.toArray, nextBytes.toArray)
-      val splitAt          = allBytes.length - lastIncompleteBytes(allBytes)
+      val allBytes = Array.concat(buffer.toArray, nextBytes.toArray)
+      val splitAt = allBytes.length - lastIncompleteBytes(allBytes)
       if (splitAt == allBytes.length)
         (new String(allBytes, utf8Charset) :: output, Chunk.empty)
       else if (splitAt == 0)

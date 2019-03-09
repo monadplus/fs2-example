@@ -32,7 +32,7 @@ object Converter extends IOApp {
     }
 
   def run(args: List[String]): IO[ExitCode] = {
-    val in  = Paths.get("data/fahrenheit.txt")
+    val in = Paths.get("data/fahrenheit.txt")
     val out = Paths.get("data/celsius.txt")
     convert(in, out).compile.drain.as(ExitCode.Success)
   }

@@ -18,9 +18,9 @@ object Intersperse extends IOApp {
             _.uncons.flatMap {
               case None => Pull.pure(None)
               case Some((hd, tl)) =>
-                val size   = hd.size * 2
+                val size = hd.size * 2
                 val buffer = new Array[O2](size)
-                var i      = 0
+                var i = 0
                 while (i < hd.size) {
                   buffer(i * 2) = separator
                   buffer(i * 2 + 1) = hd(i)

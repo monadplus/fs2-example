@@ -23,11 +23,11 @@ class PreciousResource[F[_]: Concurrent: Timer](name: String, s: Semaphore[F]) {
 object Resources extends IOApp {
 
   val program = for {
-    s  <- Stream.eval(Semaphore[IO](1))
+    s <- Stream.eval(Semaphore[IO](1))
     r1 = new PreciousResource[IO]("R1", s)
     r2 = new PreciousResource[IO]("R2", s)
     r3 = new PreciousResource[IO]("R3", s)
-    _  <- Stream(r1.use, r2.use, r3.use).parJoin(3).drain
+    _ <- Stream(r1.use, r2.use, r3.use).parJoin(3).drain
   } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =

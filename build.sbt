@@ -5,29 +5,29 @@ scalaVersion in ThisBuild := "2.12.7"
 scalafmtOnCompile in ThisBuild := true
 
 // Library versions all in one place, for convenience and sanity.
-lazy val catsVersion          = "1.6.0"
-lazy val catsEffectsVersion   = "1.2.0"
-lazy val fs2Version           = "1.0.3"
-lazy val mouseVersion         = "0.18"
-lazy val kittensVersion       = "1.1.1"
+lazy val catsVersion = "1.6.0"
+lazy val catsEffectsVersion = "1.2.0"
+lazy val fs2Version = "1.0.3"
+lazy val mouseVersion = "0.18"
+lazy val kittensVersion = "1.1.1"
 lazy val kindProjectorVersion = "0.9.8"
-lazy val scalaCheckVersion    = "1.14.0"
-lazy val scalaTestVersion     = "3.0.5"
+lazy val scalaCheckVersion = "1.14.0"
+lazy val scalaTestVersion = "3.0.5"
 
 lazy val commonDependencies = Seq(
-  "org.typelevel"  %% "cats-core"   % catsVersion, // required
-  "org.typelevel"  %% "cats-macros" % catsVersion, // required by core
-  "org.typelevel"  %% "cats-kernel" % catsVersion, // required by core
-  "org.typelevel"  %% "cats-free"   % catsVersion,
-  "org.typelevel"  %% "mouse"       % mouseVersion, // convenient syntax
-  "org.typelevel"  %% "kittens"     % kittensVersion, // automatic type class instances derivation
-  "org.typelevel"  %% "cats-effect" % catsEffectsVersion,
-  "co.fs2"         %% "fs2-core"    % fs2Version, // cats 1.4.0 and cats-effect 1.0
-  "co.fs2"         %% "fs2-io"      % fs2Version, // optional I/O library
-  "co.fs2"         %% "fs2-reactive-streams"      % fs2Version, // optional I/O library
-  "org.scalacheck" %% "scalacheck"  % scalaCheckVersion % Test,
-  "org.scalatest"  %% "scalatest"   % scalaTestVersion % Test,
-  "org.scalactic"  %% "scalactic"   % scalaTestVersion % Test
+  "org.typelevel" %% "cats-core" % catsVersion, // required
+  "org.typelevel" %% "cats-macros" % catsVersion, // required by core
+  "org.typelevel" %% "cats-kernel" % catsVersion, // required by core
+  "org.typelevel" %% "cats-free" % catsVersion,
+  "org.typelevel" %% "mouse" % mouseVersion, // convenient syntax
+  "org.typelevel" %% "kittens" % kittensVersion, // automatic type class instances derivation
+  "org.typelevel" %% "cats-effect" % catsEffectsVersion,
+  "co.fs2" %% "fs2-core" % fs2Version, // cats 1.4.0 and cats-effect 1.0
+  "co.fs2" %% "fs2-io" % fs2Version, // optional I/O library
+  "co.fs2" %% "fs2-reactive-streams" % fs2Version, // optional I/O library
+  "org.scalacheck" %% "scalacheck" % scalaCheckVersion % Test,
+  "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+  "org.scalactic" %% "scalactic" % scalaTestVersion % Test
 )
 
 lazy val compilerFlags = Seq(
@@ -62,7 +62,7 @@ lazy val compilerFlags = Seq(
     "-Xlint:stars-align", // Pattern sequence wildcard must align with sequence component.
     "-Xlint:type-parameter-shadow", // A local type parameter shadows a type already in scope.
     "-Xlint:unsound-match", // Pattern match may not be typesafe.
-    "-Yno-adapted-args",    // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
+    "-Yno-adapted-args", // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
     // "-Yno-imports",                      // No predef or default imports
     "-Ypartial-unification", // Enable partial unification in type constructor inference
 //    "-Ywarn-dead-code", // Warn when dead code is identified.

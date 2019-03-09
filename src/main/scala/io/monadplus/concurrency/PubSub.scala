@@ -23,7 +23,7 @@ import fs2.concurrent.{SignallingRef, Topic}
 
 sealed trait Event
 case class Text(value: String) extends Event
-case object Quit               extends Event
+case object Quit extends Event
 
 class EventService[F[_]](eventsTopic: Topic[F, Event], interrupter: SignallingRef[F, Boolean])(
     implicit F: Concurrent[F],
@@ -71,10 +71,10 @@ class EventService[F[_]](eventsTopic: Topic[F, Event], interrupter: SignallingRe
 object PubSub extends IOApp {
 
   val program = for {
-    topic   <- Stream.eval(Topic[IO, Event](Text("Initial Event")))
-    signal  <- Stream.eval(SignallingRef[IO, Boolean](false))
+    topic <- Stream.eval(Topic[IO, Event](Text("Initial Event")))
+    signal <- Stream.eval(SignallingRef[IO, Boolean](false))
     service = new EventService[IO](topic, signal)
-    _       <- service.startPublisher.concurrently(service.startSubscribers)
+    _ <- service.startPublisher.concurrently(service.startSubscribers)
   } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =
