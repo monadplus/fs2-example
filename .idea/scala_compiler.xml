@@ -15,7 +15,6 @@
         <parameter value="-encoding" />
         <parameter value="utf-8" />
         <parameter value="-Xcheckinit" />
-        <parameter value="-Xfatal-warnings" />
         <parameter value="-Xfuture" />
         <parameter value="-Xlint:adapted-args" />
         <parameter value="-Xlint:by-name-right-associative" />

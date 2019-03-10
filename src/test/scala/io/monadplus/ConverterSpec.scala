@@ -14,7 +14,7 @@ class ConverterSpec extends FunSpec {
       Converter.convert(in, out).compile.drain
 
     it("should convert from Fahrenheit to Celsius") {
-      val in  = Paths.get(basePath, "fahrenheit.txt")
+      val in = Paths.get(basePath, "fahrenheit.txt")
       val out = Files.createTempFile("output", "txt")
 
       celsiusToFahrenheit(in, out).unsafeRunSync()

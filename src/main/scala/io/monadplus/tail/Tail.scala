@@ -1,35 +1,23 @@
 package io.monadplus.tail
 
-import java.nio.file.{Path, Paths, StandardOpenOption, WatchEvent}
+import java.nio.file._
 import java.util.concurrent.Executors
 
 import cats._
 import cats.data._
 import cats.implicits._
 import cats.effect._
+import cats.effect.concurrent.Ref
 import cats.effect.implicits._
 import fs2._
-import fs2.concurrent.{NoneTerminatedQueue, Queue}
-import fs2.io.Watcher.Event
-import fs2.io.Watcher.Event.Modified
+import fs2.concurrent.Queue
 import fs2.io._
 import fs2.io.file._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-/*
-watch path events to queue
-Read queue, when event is found read latest position read until the end of the file
-print it, and termiante
- */
 object Tail extends IOApp {
-  def watchPath[F[_]: Concurrent, O](path: Path, queue: NoneTerminatedQueue[F, Unit]): Stream[F, Unit] =
-    watch(path)
-      .map {
-        case Modified(_, _) => Some(())
-        case _ => None
-      }
-      .through(queue.enqueue)
 
   def blockingExecutionContext[F[_]](implicit F: Sync[F]): Stream[F, ExecutionContext] =
     Stream.resource {
@@ -39,39 +27,78 @@ object Tail extends IOApp {
       }
     }
 
-  def loop[F[_]](queue: NoneTerminatedQueue[F, Unit],
-                 fileHandle: FileHandle[F],
-                 lastRead: Long)(implicit F: Sync[F]): F[Unit] = {
-    queue.dequeue1.flatMap {
-      case None => F.unit
-      case _ => fileHandle.size.flatMap { size =>
-        if (lastRead == size)
-          loop(queue, fileHandle, lastRead)
+  // TODO FileHandle is not aware of changes when  you open and rewrite the file.
+  def watchFile[F[_]: Concurrent](path: Path,
+                                  fileHandle: FileHandle[F],
+                                  interrupt: Ref[F, Boolean],
+                                  pollTime: FiniteDuration = 100.millis)(
+      implicit F: Sync[F],
+      timer: Timer[F]): Stream[F, Unit] = {
+
+    def loop(lastRead: Long): F[Unit] = {
+      def delay[A](fa: F[A]): F[A] =
+        timer.sleep(pollTime) >> fa
+
+      def size: F[Long] =
+        F.delay(Files.size(path))
+
+      interrupt.get.flatMap { isFinished =>
+        if (isFinished)
+          F.unit
         else
-          fileHandle.read((size - lastRead).toInt, lastRead).flatMap {
-            case Some(c) =>
-              Stream.chunk(c).through(text.utf8Decode).covary[F].compile.string.flatMap(s => F.delay(println(s))) >> loop(queue, fileHandle, size)
-            case None =>
-              loop(queue, fileHandle, lastRead)
+          size.flatMap { size =>
+            if (lastRead >= size) {
+              delay(loop(lastRead))
+            } else {
+              fileHandle
+                .read((size - lastRead).toInt, lastRead)
+                .flatMap {
+                  case Some(c) =>
+                    Stream.chunk(c).through(text.utf8Decode).covary[F].compile.string.flatMap(s => F.delay(print(s))) >> delay(loop(size))
+                  case None =>
+                    println("None")
+                    delay(loop(lastRead))
+                }
+            }
           }
       }
     }
+
+    Stream.eval(loop(0L).handleErrorWith(e => F.delay(println(s"Error: ${e.getMessage}"))))
   }
 
-  def consumeEvents[F[_]: Sync: ContextShift](path: Path, ec: ExecutionContext, queue: NoneTerminatedQueue[F, Unit]): Stream[F, Unit] = {
-    pulls.fromPath(path, ec, List(StandardOpenOption.READ)).map(_.resource).flatMap { fileHandle =>
-      Pull.output1(fileHandle)
-    }.stream.flatMap { fileHandle =>
-      Stream.eval(queue.enqueue1(().some)) ++ Stream.eval(loop(queue, fileHandle, 0L))
-    }
-  }
-
-  override def run(args: List[String]): IO[ExitCode] = {
-    val path: Path = Paths.get("data/tail.txt")
-    blockingExecutionContext[IO].flatMap { ec =>
-      Stream.eval(Queue.boundedNoneTerminated[IO, Unit](1)).flatMap { queue =>
-        consumeEvents[IO](path, ec, queue).concurrently(watchPath(path, queue))
+  def fileHandle[F[_]: Sync: ContextShift](path: Path,
+                                           blockingEC: ExecutionContext): Stream[F, FileHandle[F]] =
+    pulls
+      .fromPath(path, blockingEC, List(StandardOpenOption.READ))
+      .flatMap { cancellable =>
+        Pull.output1(cancellable.resource)
       }
-    }.compile.drain.as(ExitCode.Success)
-  }
+      .stream
+
+  def watchStdIn[F[_]: ContextShift](blockingEC: ExecutionContext, interrupt: Ref[F, Boolean])(
+      implicit F: Sync[F]): Stream[F, Unit] =
+    io.stdin(256 * 1024, blockingEC)
+      .through(text.utf8Decode)
+      .evalMap[F, Option[Unit]] { s =>
+        if (s.trim == "finish")
+          interrupt.modify(_ => true -> None)
+        else
+          F.pure(().some)
+      }
+      .unNoneTerminate // This is redundant
+
+  def program[F[_]: Concurrent: Timer: ContextShift]: Stream[F, Unit] =
+    blockingExecutionContext.flatMap { blockingExecutionContext =>
+      Stream.eval(Ref.of[F, Boolean](false)).flatMap { interrupt =>
+        val path: Path = Paths.get("data/tail.txt")
+        fileHandle(path, blockingExecutionContext).flatMap { fileHandle =>
+          watchFile(path, fileHandle, interrupt).concurrently(
+            watchStdIn(blockingExecutionContext, interrupt))
+        }
+      }
+    }
+
+  override def run(args: List[String]): IO[ExitCode] =
+    program[IO].compile.drain.as(ExitCode.Success)
 }
