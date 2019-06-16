@@ -1,4 +1,0 @@
-// Values in fahrenheit
-32
-98.6
-212
