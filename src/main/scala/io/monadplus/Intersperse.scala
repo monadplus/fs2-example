@@ -3,7 +3,6 @@ package io.monadplus
 import cats.effect._
 import cats.implicits._
 import fs2._
-import fs2.io._
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag

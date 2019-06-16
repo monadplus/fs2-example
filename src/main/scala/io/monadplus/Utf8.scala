@@ -1,14 +1,11 @@
 package io.monadplus
 
-import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 import java.util.concurrent.Executors
 
-import cats._
 import cats.implicits._
 import cats.effect._
-import cats.effect.implicits._
 import fs2._
 import fs2.io._
 

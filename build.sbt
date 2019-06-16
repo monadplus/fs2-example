@@ -7,7 +7,7 @@ scalafmtOnCompile in ThisBuild := true
 // Library versions all in one place, for convenience and sanity.
 lazy val catsVersion = "1.6.0"
 lazy val catsEffectsVersion = "1.2.0"
-lazy val fs2Version = "1.0.3"
+lazy val fs2Version = "1.0.4"
 lazy val mouseVersion = "0.18"
 lazy val kittensVersion = "1.1.1"
 lazy val kindProjectorVersion = "0.9.8"

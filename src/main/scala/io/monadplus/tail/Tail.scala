@@ -3,15 +3,10 @@ package io.monadplus.tail
 import java.nio.file._
 import java.util.concurrent.Executors
 
-import cats._
-import cats.data._
 import cats.implicits._
 import cats.effect._
 import cats.effect.concurrent.Ref
-import cats.effect.implicits._
 import fs2._
-import fs2.concurrent.Queue
-import fs2.io._
 import fs2.io.file._
 
 import scala.concurrent.ExecutionContext
@@ -54,7 +49,13 @@ object Tail extends IOApp {
                 .read((size - lastRead).toInt, lastRead)
                 .flatMap {
                   case Some(c) =>
-                    Stream.chunk(c).through(text.utf8Decode).covary[F].compile.string.flatMap(s => F.delay(print(s))) >> delay(loop(size))
+                    Stream
+                      .chunk(c)
+                      .through(text.utf8Decode)
+                      .covary[F]
+                      .compile
+                      .string
+                      .flatMap(s => F.delay(print(s))) >> delay(loop(size))
                   case None =>
                     println("None")
                     delay(loop(lastRead))

@@ -11,7 +11,7 @@ import cats.effect._
 object Prefetch extends IOApp {
 
   def prefetch[F[_], F2[x] >: F[x]: Concurrent, O](s: Stream[F, O])(n: Int): Stream[F2, O] =
-    prefetchN[F, F2, O](s)(1)
+    prefetchN[F, F2, O](s)(n)
 
   def prefetchN[F[_], F2[x] >: F[x]: Concurrent, O](s: Stream[F, O])(n: Int): Stream[F2, O] =
     Stream.eval(Queue.bounded[F2, Option[Chunk[O]]](n)).flatMap { queue =>
