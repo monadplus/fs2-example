@@ -1,39 +1,47 @@
 package io.monadplus
 
-import cats._, cats.data._, cats.implicits._
-import cats.effect._, cats.effect.implicits._
-import fs2._, fs2.io._
+import cats.implicits._
+import cats.effect._
+import fs2._
 
 import scala.concurrent.duration._
 import fs2.concurrent.Queue
 import cats.effect.concurrent.Ref
 
-object Partitions extends IOApp {
-  def partitions[F[_]: Sync, A, K](selector: A => F[K]): Pipe[F, A, (K, Stream[F, A])] =
+// Source code from: https://gist.github.com/SystemFw/168ff694eecf45a8d0b93ce7ef060cfd
+object Partitions {
+  def partitions[F[_]: Concurrent, A, K](selector: A => F[K]): Pipe[F, A, (K, Stream[F, A])] =
     in =>
-      // Stream[F, (K, Stream[F, A]]
       Stream.eval(Ref.of[F, Map[K, Queue[F, Option[A]]]](Map.empty)).flatMap { st =>
         val cleanup: F[Unit] = {
-          import alleycats.std.std._
+          import alleycats.std.all._
           st.get.flatMap(_.traverse_(_.enqueue1(None)))
         }
 
-        (in ++ Stream.eval_(cleanup))
-          .evalMap { e1 =>
-            (selector(e1), st.get).mapN { (key, queues) =>
+        // Although the ++ cleanup seems redundant, it is not.
+        // Otherwise the queues will never end.
+        (in ++ Stream.eval_(cleanup)).evalMap { el =>
+            (selector(el), st.get).mapN { (key, queues) =>
               queues
                 .get(key)
                 .fold {
                   for {
                     newQ <- Queue.unbounded[F, Option[A]]
-                    _ <- st.modify(_ + (key -> newQ))
+                    _ <- st.update(_ + (key -> newQ))
                     _ <- newQ.enqueue1(el.some)
                   } yield (key -> newQ.dequeue.unNoneTerminate).some
-                }(_.enqueue1(e1.some))
+                }(_.enqueue1(el.some).as(None))
             }.flatten
           }
+          .unNone
           .onFinalize(cleanup)
       }
+
+}
+
+object PartitionsTest extends IOApp {
+
+  import Partitions._
 
   def selector(i: Int): IO[Int] =
     IO.pure(i % 3)
@@ -50,7 +58,7 @@ object Partitions extends IOApp {
       .covary[IO]
       .through(partitions(selector))
       .map {
-        case (k, st) => st.tupleLeft(k).through(flakiness).through(Sink.showLinesStdOut)
+        case (k, st) => st.tupleLeft(k).through(flakiness).showLinesStdOut
       }
       .parJoinUnbounded
       .compile
@@ -59,11 +67,3 @@ object Partitions extends IOApp {
 
 }
 
-object Memoize extends IOApp {
-  // Ref + Def, (ref.of Option + def Either throwable A
-  def memoize[F[_], A](f: F[A])(implicit F: Async[F]): F[F[A]] =
-    ???
-
-  def run(args: List[String]): IO[ExitCode] =
-    IO.pure(ExitCode.Success)
-}
