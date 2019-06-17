@@ -1,8 +1,7 @@
 resolvers in Global += Resolver.sonatypeRepo("releases") // "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 //ensimeScalaVersion in ThisBuild := "2.12.7"
-scalaVersion in ThisBuild := "2.12.7"
-scalafmtOnCompile in ThisBuild := true
+scalaVersion in ThisBuild := "2.12.8"
 
 // Library versions all in one place, for convenience and sanity.
 lazy val catsVersion = "1.6.0"
@@ -19,6 +18,7 @@ lazy val commonDependencies = Seq(
   "org.typelevel" %% "cats-macros" % catsVersion, // required by core
   "org.typelevel" %% "cats-kernel" % catsVersion, // required by core
   "org.typelevel" %% "cats-free" % catsVersion,
+  "org.typelevel" %% "alleycats-core" % catsVersion,
   "org.typelevel" %% "mouse" % mouseVersion, // convenient syntax
   "org.typelevel" %% "kittens" % kittensVersion, // automatic type class instances derivation
   "org.typelevel" %% "cats-effect" % catsEffectsVersion,
