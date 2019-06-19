@@ -12,6 +12,7 @@ lazy val kittensVersion = "1.1.1"
 lazy val kindProjectorVersion = "0.9.8"
 lazy val scalaCheckVersion = "1.14.0"
 lazy val scalaTestVersion = "3.0.5"
+lazy val catsParV = "0.2.1"
 
 lazy val commonDependencies = Seq(
   "org.typelevel" %% "cats-core" % catsVersion, // required
@@ -25,6 +26,7 @@ lazy val commonDependencies = Seq(
   "co.fs2" %% "fs2-core" % fs2Version, // cats 1.4.0 and cats-effect 1.0
   "co.fs2" %% "fs2-io" % fs2Version, // optional I/O library
   "co.fs2" %% "fs2-reactive-streams" % fs2Version, // optional I/O library
+  "io.chrisdavenport" %% "cats-par" % catsParV,
   "org.scalacheck" %% "scalacheck" % scalaCheckVersion % Test,
   "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
   "org.scalactic" %% "scalactic" % scalaTestVersion % Test
